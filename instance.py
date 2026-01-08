@@ -1,6 +1,7 @@
-#!/usr/bin/env python3
 import argparse
+import os
 import sys
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -39,12 +40,18 @@ def main():
         sys.exit(0)
 
     if args.dev:
-        print(f"Selected BIN file: {args.dev}")
+        # 檔案存在性檢查
+        if not os.path.exists(args.dev):
+            print(f"[ERROR] File '{args.dev}' not found in current directory.")
+            sys.exit(1)
+
+        print(f"[INFO] Selected BIN file: {args.dev}")
         if args.index is not None and args.PAR is not None:
-            print(f"Modify index {args.index} with value '{args.PAR}'")
+            print(f"[ACTION] Modify index {args.index} with value '{args.PAR}'")
             # TODO: implement BIN modification logic here
         else:
-            print("Reading BIN file... (future implementation)")
+            print("[ACTION] Reading BIN file... (future implementation)")
+
 
 if __name__ == "__main__":
     main()
