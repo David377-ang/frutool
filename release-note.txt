@@ -1,0 +1,15 @@
+* Release Note
+
+Image Name:
+Netlake2-Golden-FBOSS-v6_20251107.bin
+
+Checksum:
+md5sum - 2d7e29c9fae0bc31d063887c0cc3343d
+sha1sum - 8397c802643f8ddc712ea483e8c3d243ffa62ea3
+sha256sum - 63374b2b36a65205630f0f93c188a6fbfba057d260fc292e081d3eedd059315c
+
+Author:
+Jay-Zhang
+
+Date:
+2025-11-07

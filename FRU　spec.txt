@@ -1,0 +1,1 @@
+https://github.com/facebook/fboss/blob/a8d006e2278889d9bc4645fb2c696ecd5e02615f/docs/docs/platform/meta_eeprom_format_v6.md?plain=1#L4
