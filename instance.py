@@ -8,9 +8,12 @@ from binProc import read_eeprom_bin
 from binProc import export_bin_to_txt
 from binProc import export_full_hex_to_txt
 from binProc import modify_with_space_padding
+from binProc import process_batch_tasks
+from binProc import generate_report
 
 G_bin_output = "FRU_table.txt"
 G_bin_src = "your_eeprom_data.bin"
+G_config_file = "FruConfig.ini"
 
 def main():
 
@@ -27,13 +30,18 @@ def main():
     # --- 實戰範例 ---
     # 假設我們要寫入型號，且該區段固定長度為 12 bytes
     # 寫入 "MODEL-A"，後面的 5 個位元組會被填為 0x20
-    modify_with_space_padding(
-        file_path=os.path.join(executable_dir, G_bin_src), 
-        offset=0x10, 
-        data="MODEL-A", 
-        max_length=12, 
-        report_path="eeprom_space_report.txt"
-    )
+    # modify_with_space_padding(
+    #     file_path=os.path.join(executable_dir, G_bin_src), 
+    #     offset=0x10, 
+    #     data="MODEL-A", 
+    #     max_length=12, 
+    #     report_path="eeprom_space_report.txt"
+    # )
+
+
+    process_batch_tasks(G_config_file)
+    generate_report(os.path.join(executable_dir, G_bin_src), os.path.join(executable_dir, G_bin_output))
+
     return None
 
 if __name__ == "__main__":

@@ -1,3 +1,4 @@
+import configparser
 import os
 import shutil
 
@@ -215,3 +216,78 @@ def modify_with_space_padding(file_path, offset, data, max_length, report_path="
         
     except Exception as e:
         print(f"🔥 修改失敗: {e}")
+
+
+def read_text_file(txt_path):
+    """讀取指定的文字檔內容並移除換行符"""
+    if not os.path.exists(txt_path):
+        print(f"⚠️ 找不到來源文字檔: {txt_path}")
+        return None
+    with open(txt_path, "r", encoding="utf-8") as f:
+        # read().strip() 會移除前後的空白與換行
+        return f.read().strip()
+
+def process_batch_tasks(config_file):
+    config = configparser.ConfigParser()
+    if not os.path.exists(config_file):
+        print(f"❌ 錯誤：找不到設定檔 {config_file}")
+        return
+
+    config.read(config_file, encoding='utf-8')
+    
+    # 遍歷所有的 Section (例如 [TASK_1], [TASK_2])
+    for section in config.sections():
+        print(f"\n--- 正在處理任務: {section} ---")
+        try:
+            # 讀取設定
+            target_file = config.get(section, 'target_file')
+            offset = int(config.get(section, 'offset'), 16)
+            max_length = config.getint(section, 'max_length')
+            source_txt = config.get(section, 'source_txt')
+
+            # 讀取外部文字內容
+            content = read_text_file(source_txt)
+            if content is None:
+                continue
+
+            # 執行修改
+            execute_modify(target_file, offset, content, max_length)
+            
+        except Exception as e:
+            print(f"❌ 任務 {section} 失敗: {e}")
+
+def execute_modify(file_path, offset, data, max_length):
+    """核心寫入邏輯：優化備份機制、長度檢查、0x20 填滿"""
+    if not os.path.exists(file_path):
+        print(f"❌ 錯誤：找不到目標檔案 {file_path}")
+        return
+
+    # --- 優化後的備份邏輯 ---
+    backup_path = file_path + ".bak"
+    if not os.path.exists(backup_path):
+        # 只有在備份檔不存在時才執行複製
+        # 這確保了 .bak 檔案永遠是「修改任何內容前」的最原始版本
+        shutil.copy2(file_path, backup_path)
+        print(f"🛡️  已建立原始備份：{backup_path}")
+    else:
+        # 如果已存在，就不再覆蓋，保持原始狀態
+        print(f"ℹ️  已存在備份，跳過複製，保護原始資料。")
+    # -----------------------
+
+    # 1. 準備資料
+    payload = data.encode('ascii')
+    if len(payload) > max_length:
+        print(f"⚠️ 跳過任務：文字長度 ({len(payload)}) 超過限制 ({max_length})")
+        return
+
+    # 2. 準備寫入資料 (使用 0x20 填滿)
+    final_payload = payload + b'\x20' * (max_length - len(payload))
+    
+    try:
+        with open(file_path, "r+b") as f:
+            f.seek(offset)
+            f.write(final_payload)
+        print(f"✅ 成功：位址 0x{offset:X} 修改完成。")
+    except Exception as e:
+        print(f"🔥 寫入失敗: {e}")
+
