@@ -291,3 +291,67 @@ def execute_modify(file_path, offset, data, max_length):
     except Exception as e:
         print(f"🔥 寫入失敗: {e}")
 
+def calculate_crc16_aug(data: bytes):
+    """符合 CRC16-CCITT-AUG 規範: Poly: 0x1021, Init: 0x1D0F"""
+    crc = 0x1D0F
+    poly = 0x1021
+    for byte in data:
+        crc ^= (byte << 8)
+        for _ in range(8):
+            if crc & 0x8000:
+                crc = (crc << 1) ^ poly
+            else:
+                crc <<= 1
+            crc &= 0xFFFF
+    return crc
+
+
+def standalone_crc_update(config_path):
+    """
+    單獨測試功能：讀取指定 ini 路徑並更新 CRC
+    """
+    if not os.path.exists(config_path):
+        print(f"❌ 錯誤：找不到設定檔 {config_path}")
+        return
+
+    # 1. 讀取 ini
+    config = configparser.ConfigParser(inline_comment_prefixes=('#', ';'))
+    config.read(config_path, encoding='utf-8')
+
+    # 2. 檢查區段是否存在
+    if not config.has_section('CRC_SETTING'):
+        print(f"❌ 錯誤：{config_path} 中缺少 [CRC_SETTING] 區段")
+        return
+
+    try:
+        # 3. 取得參數
+        target_file = config.get('CRC_SETTING', 'target_file')
+        crc_offset = int(config.get('CRC_SETTING', 'crc_offset'), 16)
+        
+        if not os.path.exists(target_file):
+            print(f"❌ 錯誤：找不到目標二進位檔 {target_file}")
+            return
+
+        # 4. 讀取資料並計算
+        with open(target_file, "rb") as f:
+            full_data = f.read()
+
+        # 範圍：從 0 到 crc_offset-2
+        data_to_calc = full_data[:crc_offset-2]
+        new_crc = calculate_crc16_aug(data_to_calc)
+        
+        # 轉為 Big-Endian 位元組
+        crc_bytes = new_crc.to_bytes(2, byteorder='big')
+
+        # 5. 寫回檔案
+        with open(target_file, "r+b") as f:
+            f.seek(crc_offset)
+            f.write(crc_bytes)
+            
+        print(f"✨ 單獨測試成功！")
+        print(f"   檔案: {target_file}")
+        print(f"   位址: 0x{crc_offset:X}")
+        print(f"   新的 CRC16 值: 0x{new_crc:04X}")
+
+    except Exception as e:
+        print(f"🔥 執行過程中發生錯誤: {e}")

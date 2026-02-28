@@ -10,6 +10,7 @@ from binProc import export_full_hex_to_txt
 from binProc import modify_with_space_padding
 from binProc import process_batch_tasks
 from binProc import generate_report
+from binProc import standalone_crc_update
 
 G_bin_output = "FRU_table.txt"
 G_bin_src = "your_eeprom_data.bin"
@@ -39,8 +40,12 @@ def main():
     # )
 
 
-    process_batch_tasks(G_config_file)
-    generate_report(os.path.join(executable_dir, G_bin_src), os.path.join(executable_dir, G_bin_output))
+    #  --- official release ---    
+    # process_batch_tasks(os.path.join(executable_dir, G_config_file))
+    # generate_report(os.path.join(executable_dir, G_bin_src), os.path.join(executable_dir, G_bin_output))
+
+    standalone_crc_update(os.path.join(executable_dir, G_config_file))
+
 
     return None
 
