@@ -41,9 +41,8 @@ def main():
 
 
     #  --- official release ---    
-    # process_batch_tasks(os.path.join(executable_dir, G_config_file))
-    # generate_report(os.path.join(executable_dir, G_bin_src), os.path.join(executable_dir, G_bin_output))
-
+    process_batch_tasks(os.path.join(executable_dir, G_config_file))
+    generate_report(os.path.join(executable_dir, G_bin_src), os.path.join(executable_dir, G_bin_output))
     standalone_crc_update(os.path.join(executable_dir, G_config_file))
 
 
