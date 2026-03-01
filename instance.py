@@ -6,6 +6,7 @@ from filepathProc import get_executable_path
 from binProc import process_batch_tasks
 from binProc import generate_report
 from binProc import standalone_crc_update
+from binshowProc import show_fru_content
 
 G_bin_output = "FRU_table.txt"
 G_bin_src = "your_eeprom_data.bin"
@@ -70,12 +71,19 @@ def main():
         print(f"🔍 [Mode: SHOW] Reading structure from: {os.path.basename(target_path)}")
         
         # 執行解析
-        # show_fru_content(target_path) 
+        show_fru_content(target_path)
         sys.exit(0)
 
 
     return None
 
+def test_debug():
+
+    show_fru_content(r"C:/frutool/Netlake2-Golden-FBOSS-v6_20251107.bin")
+
+    return None
+
 if __name__ == "__main__":
     main()
+    #test_debug()
 
