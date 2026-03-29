@@ -16,35 +16,49 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
 
+    # 將 --detail 加入互斥群組，確保一次只執行一個功能
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--run", action="store_true", help="Execute strictly according to FruConfig.ini")
     group.add_argument("--show", action="store_true", help="Display FRU TLV structure (Requires --dev)")
     group.add_argument("--info", action="store_true", help="Display tool information")
     group.add_argument("--version", action="store_true", help="Display tool version")
+    group.add_argument("--detail", action="store_true", help="Display available command examples") # 新增此行
 
     parser.add_argument("--dev", metavar="FILE", help="Target BIN file for --show")
     args = parser.parse_args()
 
     executable_dir = get_executable_path()
 
+    # --- 1. 處理 --detail (新增) ---
+    if args.detail:
+        print("\n[ NLfrutool Available Commands ]")
+        print("-" * 50)
+        print("NLfrutool.exe --run              : Execute batch tasks from ini")
+        print("NLfrutool.exe --dev <file> --show: (Dev Mode) Show file details")
+        print("NLfrutool.exe --info             : Show tool configuration info")
+        print("NLfrutool.exe --version          : Show current version (v0.3)")
+        print("-" * 50 + "\n")
+        sys.exit(0)
+
+    # --- 2. 處理 --info ---
     if args.info:
-        print("NLfrutool v0.2 | Corporation: WYMTN | Author: David JH Lin")
+        print("NLfrutool v0.3 | Corporation: WYMTN | Author: David JH Lin")
         sys.exit(0)
 
+    # --- 3. 處理 --version ---
     if args.version:
-        print("NLfrutool version 0.2")
+        print("NLfrutool version 0.3")
         sys.exit(0)
 
+    # --- 4. 處理 --run ---
     if args.run:
         print(f"🚀 [Mode: RUN] Target Dir: {executable_dir}")
         ini_path = os.path.join(executable_dir, G_config_file)
         result_path = os.path.join(executable_dir, G_result_txt)
         
-        # 1. 執行核心邏輯：回傳 (產出路徑, 訊息清單)
         target_bin_path, messages = process_batch_tasks(ini_path, executable_dir)
         
         if target_bin_path:
-            # --- 成功流程 (輸出 0) ---
             report_out = os.path.join(executable_dir, G_bin_output)
             generate_report(target_bin_path, report_out)
             
@@ -58,7 +72,6 @@ def main():
             print(f"✨ Success! Result code 0 saved to {G_result_txt}")
             sys.exit(0)
         else:
-            # --- 失敗流程 (輸出 1) ---
             with open(result_path, "w", encoding="utf-8") as rf:
                 rf.write("1\n")
                 rf.write("FAILURE_REASON:\n")
@@ -68,6 +81,7 @@ def main():
             print(f"❌ Failed! Result code 1 saved to {G_result_txt}")
             sys.exit(1)
 
+    # --- 5. 處理 --show ---
     if args.show:
         if not args.dev:
             print("❌ Error: --show requires --dev <file>")
@@ -78,14 +92,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-def test_debug():
-
-    show_fru_content(r"C:/frutool/Netlake2-Golden-FBOSS-v6_20251107.bin")
-
-    return None
-
-if __name__ == "__main__":
-    main()
-    #test_debug()
-
