@@ -46,6 +46,19 @@ def process_batch_tasks(config_file, executable_dir):
         src_path = os.path.join(executable_dir, src_name)
         dst_path = os.path.join(executable_dir, dst_name)
 
+        # ==========================================================
+        # 新增功能：優先刪除舊的 Target Bin，確保結果唯一性
+        # ==========================================================
+        if os.path.exists(dst_path):
+            try:
+                os.remove(dst_path)
+                process_log.append(f"Clean up: Old '{dst_name}' removed.")
+            except Exception as e:
+                # 萬一檔案被其他程式占用(例如開啟中)，這裡會攔截並報錯
+                raise IOError(f"Cannot delete existing '{dst_name}': {str(e)}")
+        # ==========================================================
+
+
         if not os.path.exists(src_path):
             raise FileNotFoundError(f"Source file not found: {src_name}")
 
@@ -53,12 +66,12 @@ def process_batch_tasks(config_file, executable_dir):
             mem_data = bytearray(f.read())
         process_log.append(f"Loaded source: {src_name}")
 
-        # --- B. 嚴格項目校驗與修改 ---
+        # --- B. 項目校驗與修改 (Item Sections) ---
         for section in config.sections():
             if section in ['GOLDEN_BIN', 'CRC_SETTING']:
                 continue
             
-            # 1. 檢查 ini 欄位是否存在且非空白
+            # 檢查項目欄位是否完整且非空
             for key in ['offset', 'max_length', 'source_txt']:
                 if not config.has_option(section, key) or not config.get(section, key).strip():
                     raise ValueError(f"Section [{section}]: '{key}' is empty or missing in ini.")
@@ -68,7 +81,6 @@ def process_batch_tasks(config_file, executable_dir):
             txt_name = config.get(section, 'source_txt').strip()
             txt_path = os.path.join(executable_dir, txt_name)
 
-            # 2. 文字檔內容校驗
             if not os.path.exists(txt_path):
                 raise FileNotFoundError(f"[{section}] source_txt file missing: {txt_name}")
 
@@ -78,12 +90,10 @@ def process_batch_tasks(config_file, executable_dir):
             if not content:
                 raise ValueError(f"[{section}] source_txt '{txt_name}' is EMPTY.")
 
-            # 3. 不可見字元稽核
             invalid, char = has_invalid_chars(content)
             if invalid:
                 raise ValueError(f"[{section}] Invalid char '{char}' ({hex(ord(char))}) in '{txt_name}'.")
 
-            # 4. 嚴格長度匹配攔截 (不補 0x20)
             payload = content.encode('ascii')
             if len(payload) != exp_len:
                 raise ValueError(f"[{section}] Length Mismatch! Expected {exp_len}, got {len(payload)} in '{txt_name}'.")
@@ -91,11 +101,20 @@ def process_batch_tasks(config_file, executable_dir):
             mem_data[off : off + exp_len] = payload
             process_log.append(f"Modify [{section}]: PASS")
 
-        # --- C. CRC 更新 ---
+        # --- C. CRC 更新 (CRC_SETTING Section) ---
         if config.has_section('CRC_SETTING'):
+            # 新增：針對 CRC 欄位的空值預檢
+            for k in ['crc_start', 'crc_end', 'crc_address']:
+                if not config.has_option('CRC_SETTING', k) or not config.get('CRC_SETTING', k).strip():
+                    raise ValueError(f"Section [CRC_SETTING]: '{k}' is empty or missing in ini.")
+
             c_start = int(config.get('CRC_SETTING', 'crc_start'), 16)
             c_end = int(config.get('CRC_SETTING', 'crc_end'), 16)
             c_addr = int(config.get('CRC_SETTING', 'crc_address'), 16)
+
+            # 確保地址範圍不會溢出
+            if c_end + 1 > len(mem_data) or c_addr + 2 > len(mem_data):
+                raise ValueError("CRC address range is out of file bounds.")
 
             new_crc = calculate_crc16_aug(mem_data[c_start : c_end + 1])
             mem_data[c_addr : c_addr + 2] = new_crc.to_bytes(2, 'big')
@@ -109,11 +128,10 @@ def process_batch_tasks(config_file, executable_dir):
         return dst_path, process_log
 
     except Exception as e:
-        # 回傳 None 代表失敗，以及錯誤訊息
-        return None, [str(e), "ABORT: No output was generated."]
+        return None, [str(e)]
 
 def generate_report(bin_path, report_path):
-    """根據產出的 target_bin 生成最終核對表"""
+    """產出視覺化報告"""
     try:
         with open(bin_path, "rb") as b, open(report_path, "w", encoding="utf-8") as r:
             r.write(f"--- FRU Update Report ---\nTarget: {os.path.basename(bin_path)}\n\n")
@@ -128,4 +146,4 @@ def generate_report(bin_path, report_path):
                 r.write(f"{addr:08X}: {hex_str}  |  {asc_str}\n")
                 addr += 16
     except Exception as e:
-        print(f"Report Error: {e}")
+        print(f"Report Generation Error: {e}")

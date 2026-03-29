@@ -28,11 +28,11 @@ def main():
     executable_dir = get_executable_path()
 
     if args.info:
-        print("NLfrutool v0.1 | Corporation: WYMTN | Author: David JH Lin")
+        print("NLfrutool v0.2 | Corporation: WYMTN | Author: David JH Lin")
         sys.exit(0)
 
     if args.version:
-        print("NLfrutool version 0.1")
+        print("NLfrutool version 0.2")
         sys.exit(0)
 
     if args.run:
