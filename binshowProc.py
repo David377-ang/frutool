@@ -35,7 +35,7 @@ def show_fru_content(file_path):
         version = data[2]
         print(f"\n[*] FRU Version: {version}")
         print(f"{'-'*60}")
-        print(f"{'ID':<4} {'Name':<28} {'Len':<4} {'Value'}")
+        print(f"{'Type':<6} {'Name':<28} {'Length':<7} {'Value'}")
         print(f"{'-'*60}")
 
         # 2. TLV 解析從 Offset 4 開始
@@ -72,7 +72,7 @@ def show_fru_content(file_path):
             else: # 預設 ASCII
                 display = val_bytes.decode('ascii', errors='ignore').strip()
 
-            print(f"{t_type:<4} {name:<28} {t_len:<4} {display}")
+            print(f"{t_type:<6} {name:<28} {t_len:<7} {display}")
 
             ptr = v_end
             if t_type == 250: break # 讀到 CRC 結束

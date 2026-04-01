@@ -42,12 +42,12 @@ def main():
 
     # --- 2. 處理 --info ---
     if args.info:
-        print("NLfrutool v0.3 | Corporation: WYMTN | Author: David JH Lin")
+        print("NLfrutool v0.4 | Corporation: WYMTN | Author: David JH Lin")
         sys.exit(0)
 
     # --- 3. 處理 --version ---
     if args.version:
-        print("NLfrutool version 0.3")
+        print("NLfrutool version 0.4")
         sys.exit(0)
 
     # --- 4. 處理 --run ---
